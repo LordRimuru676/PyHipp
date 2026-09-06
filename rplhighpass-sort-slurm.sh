@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Submit this script with: sbatch <this-filename>
+
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
@@ -9,17 +11,17 @@
 #SBATCH -o rplhps-slurm.%N.%j.out
 #SBATCH -e rplhps-slurm.%N.%j.err
 
-# Enable conda in this batch shell
-source /data/miniconda3/etc/profile.d/conda.sh
+# Initialise conda
+/data/miniconda3/bin/conda init
+source ~/.bashrc
 
-# Borrow one cloned environment
-envarg=$(/data/src/PyHipp/envlist.py)
+# Get an available cloned environment
+envarg=`/data/src/PyHipp/envlist.py`
 
-echo "Using environment: $envarg"
+# Activate the selected environment
+conda activate $envarg
 
-# Activate borrowed environment
-conda activate "$envarg"
-
+# Run high-pass filtering and MountainSort
 python -u -c "import PyHipp as pyh; \
 import time; \
 pyh.RPLHighPass(saveLevel=1); \
@@ -29,8 +31,8 @@ from PyHipp import export_mountain_cells; \
 export_mountain_cells.export_mountain_cells(); \
 print(time.localtime());"
 
-# Leave cloned environment
+# Deactivate the cloned environment
 conda deactivate
 
-# Return environment to pool
-/data/src/PyHipp/envlist.py "$envarg"
+# Return the environment to the available pool
+/data/src/PyHipp/envlist.py $envarg
